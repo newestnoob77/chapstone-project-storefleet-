@@ -1,6 +1,7 @@
 // Please don't change the pre-written code
 // Import the necessary modules here
-
+import mongoose from "mongoose";
+import UserModel from "../models/user.schema.js";
 import { sendPasswordResetEmail } from "../../../utils/emails/passwordReset.js";
 import { sendWelcomeEmail } from "../../../utils/emails/welcomeMail.js";
 import { ErrorHandler } from "../../../utils/errorHandler.js";
@@ -18,14 +19,17 @@ import crypto from "crypto";
 
 export const createNewUser = async (req, res, next) => {
   try {
+    const exsistingUser = await UserModel.findOne({ email: req.body.email });
+    if (exsistingUser)
+      return res.status(400).send("User already exists use different email");
     const newUser = await createNewUserRepo(req.body);
     await sendToken(newUser, res, 200);
     // Implement sendWelcomeEmail function to send welcome message
     await sendWelcomeEmail(newUser);
   } catch (err) {
-    console.log(err)
-    throw new ErrorHandler("Failed to create new answer",400)
+    console.log(err);
     //  handle error for duplicate email
+    return next(new ErrorHandler(500, "Something went wrong"));
   }
 };
 

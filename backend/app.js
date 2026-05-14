@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import path from "path";
+import mongoose from "mongoose";
 import productRoutes from "./src/product/routes/product.routes.js";
 import {
   errorHandlerMiddleware,
@@ -23,6 +24,14 @@ app.use("/api/storefleet/user", userRoutes);
 app.use("/api/storefleet/order", orderRoutes);
 
 // errorHandlerMiddleware
-app.use(errorHandlerMiddleware);
+app.use((err, req, res) => {
+  if (err instanceof errorHandlerMiddleware) {
+    return res.status(err.statusCode).send(err.message);
+  }
+  if (err instanceof mongoose.Error.ValidationError) {
+    return res.status(400).send(err.message);
+  }
+  return res.status(500).send("Internal server error");
+});
 
 export default app;
