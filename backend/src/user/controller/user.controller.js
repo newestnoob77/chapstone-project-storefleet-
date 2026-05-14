@@ -17,16 +17,15 @@ import {
 import crypto from "crypto";
 
 export const createNewUser = async (req, res, next) => {
-  const { name, email, password } = req.body;
   try {
     const newUser = await createNewUserRepo(req.body);
     await sendToken(newUser, res, 200);
-
     // Implement sendWelcomeEmail function to send welcome message
     await sendWelcomeEmail(newUser);
   } catch (err) {
+    console.log(err)
+    throw new ErrorHandler("Failed to create new answer",400)
     //  handle error for duplicate email
-    return next(new ErrorHandler(400, err));
   }
 };
 
