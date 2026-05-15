@@ -44,7 +44,13 @@ const userSchema = new mongoose.Schema({
 });
 
 userSchema.pre("save", async function (next) {
-  //  hash user password before saving using bcrypt
+  if (!this.isModified("password")) return next;
+  try {
+    this.password = await bcrypt.hash(this.password, 10);
+    next();
+  } catch (err) {
+    next(err);
+  } //  hash user password before saving using bcrypt
 });
 
 // JWT Token
@@ -59,9 +65,8 @@ userSchema.methods.comparePassword = async function (password) {
 };
 
 // generatePasswordResetToken
-userSchema.methods.getResetPasswordToken = async function () {
+userSchema.methods.getResetPasswordToken = function () {
   const resetToken = crypto.randomBytes(20).toString("hex");
-
   // hashing and updating user resetPasswordToken
   this.resetPasswordToken = crypto
     .createHash("sha256")

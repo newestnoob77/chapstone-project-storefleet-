@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import path from "path";
+import mongoose from "mongoose";
 import productRoutes from "./src/product/routes/product.routes.js";
 import {
   errorHandlerMiddleware,

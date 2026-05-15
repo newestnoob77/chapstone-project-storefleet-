@@ -1,6 +1,8 @@
 // Please don't change the pre-written code
 // Import the necessary modules here
 
+import UserModel from "../models/user.schema.js";
+import bcrypt from "bcryptjs/dist/bcrypt.js";
 import { sendPasswordResetEmail } from "../../../utils/emails/passwordReset.js";
 import { sendWelcomeEmail } from "../../../utils/emails/welcomeMail.js";
 import { ErrorHandler } from "../../../utils/errorHandler.js";
@@ -17,16 +19,18 @@ import {
 import crypto from "crypto";
 
 export const createNewUser = async (req, res, next) => {
-  const { name, email, password } = req.body;
   try {
+    const exsistingUser = await UserModel.findOne({ email: req.body.email });
+    if (exsistingUser)
+      return res.status(400).send("User already exists use different email");
     const newUser = await createNewUserRepo(req.body);
     await sendToken(newUser, res, 200);
-
     // Implement sendWelcomeEmail function to send welcome message
     await sendWelcomeEmail(newUser);
   } catch (err) {
+    console.log(err);
     //  handle error for duplicate email
-    return next(new ErrorHandler(400, err));
+    return next(new ErrorHandler(500, "Something went wrong"));
   }
 };
 
@@ -61,13 +65,45 @@ export const logoutUser = async (req, res, next) => {
     })
     .json({ success: true, msg: "logout successful" });
 };
-
+// Implement feature for forget password
 export const forgetPassword = async (req, res, next) => {
-  // Implement feature for forget password
+  try {
+    const user = await UserModel.findOne({ email: req.body.email });
+    if (!user) return res.status(400).send("User not found");
+    const resetToken = user.getResetPasswordToken();
+    await user.save({ validateBeforeSave: false });
+    const resetPasswordURL = `${req.protocol}://${req.get(
+      "host"
+    )}/api/storefleet/user/password/reset/${resetToken}`;
+    await sendPasswordResetEmail(user, resetPasswordURL);
+    return res.status(200).send(`Email sent to ${user.email}`);
+  } catch (err) {
+    console.log(err);
+    return next(new ErrorHandler(err.message, 400));
+  }
 };
 
 export const resetUserPassword = async (req, res, next) => {
   // Implement feature for reset password
+  console.log(req.params.token);
+  try {
+    const user = await findUserForPasswordResetRepo(req.params.token);
+    console.log(
+      "User password:",
+      user.password,
+      "password :",
+      req.body.password
+    );
+    if (!user) return res.status(400).send("User not found");
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+    return res.status(200).send("Passowrd reset successful");
+  } catch (err) {
+    console.log(err);
+    return next(new ErrorHandler(err.message, 400));
+  }
 };
 
 export const getUserDetails = async (req, res, next) => {
@@ -161,5 +197,14 @@ export const deleteUser = async (req, res, next) => {
 };
 
 export const updateUserProfileAndRole = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updatedUser = await updateUserRoleAndProfileRepo(id, req.body);
+    if (!updatedUser) return res.status(400).send("update failed");
+    return res.status(200).send("Updated successfully");
+  } catch (err) {
+    console.log(err);
+    return next(new ErrorHandler(400, err));
+  }
   // Write your code here for updating the roles of other users by admin
 };
