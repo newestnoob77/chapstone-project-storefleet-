@@ -1,7 +1,7 @@
 import UserModel from "./user.schema.js";
 import mongoose from "mongoose";
 import { ObjectId } from "mongoose";
-
+import crypto from "crypto";
 export const createNewUserRepo = async (user) => {
   return await new UserModel(user).save();
 };
@@ -11,7 +11,8 @@ export const findUserRepo = async (factor, withPassword = false) => {
   else return await UserModel.findOne(factor);
 };
 
-export const findUserForPasswordResetRepo = async (hashtoken) => {
+export const findUserForPasswordResetRepo = async (token) => {
+  const hashtoken = crypto.createHash("sha256").update(token).digest("hex");
   return await UserModel.findOne({
     resetPasswordToken: hashtoken,
     resetPasswordExpire: { $gt: Date.now() },

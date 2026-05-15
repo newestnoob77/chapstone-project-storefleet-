@@ -85,6 +85,25 @@ export const forgetPassword = async (req, res, next) => {
 
 export const resetUserPassword = async (req, res, next) => {
   // Implement feature for reset password
+  console.log(req.params.token);
+  try {
+    const user = await findUserForPasswordResetRepo(req.params.token);
+    console.log(
+      "User password:",
+      user.password,
+      "password :",
+      req.body.password
+    );
+    if (!user) return res.status(400).send("User not found");
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+    return res.status(200).send("Passowrd reset successful");
+  } catch (err) {
+    console.log(err);
+    return next(new ErrorHandler(err.message, 400));
+  }
 };
 
 export const getUserDetails = async (req, res, next) => {

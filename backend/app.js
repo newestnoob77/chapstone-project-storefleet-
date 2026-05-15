@@ -24,14 +24,6 @@ app.use("/api/storefleet/user", userRoutes);
 app.use("/api/storefleet/order", orderRoutes);
 
 // errorHandlerMiddleware
-app.use((err, req, res) => {
-  if (err instanceof errorHandlerMiddleware) {
-    return res.status(err.statusCode).send(err.message);
-  }
-  if (err instanceof mongoose.Error.ValidationError) {
-    return res.status(400).send(err.message);
-  }
-  return res.status(500).send("Internal server error");
-});
+app.use(errorHandlerMiddleware);
 
 export default app;
