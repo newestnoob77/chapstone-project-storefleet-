@@ -1,7 +1,8 @@
 // Please don't change the pre-written code
 // Import the necessary modules here
-import mongoose from "mongoose";
+
 import UserModel from "../models/user.schema.js";
+import bcrypt from "bcryptjs/dist/bcrypt.js";
 import { sendPasswordResetEmail } from "../../../utils/emails/passwordReset.js";
 import { sendWelcomeEmail } from "../../../utils/emails/welcomeMail.js";
 import { ErrorHandler } from "../../../utils/errorHandler.js";
@@ -64,9 +65,22 @@ export const logoutUser = async (req, res, next) => {
     })
     .json({ success: true, msg: "logout successful" });
 };
-
+// Implement feature for forget password
 export const forgetPassword = async (req, res, next) => {
-  // Implement feature for forget password
+  try {
+    const user = await UserModel.findOne({ email: req.body.email });
+    if (!user) return res.status(400).send("User not found");
+    const resetToken = user.getResetPasswordToken();
+    await user.save({ validateBeforeSave: false });
+    const resetPasswordURL = `${req.protocol}://${req.get(
+      "host"
+    )}/api/storefleet/user/password/reset/${resetToken}`;
+    await sendPasswordResetEmail(user, resetPasswordURL);
+    return res.status(200).send(`Email sent to ${user.email}`);
+  } catch (err) {
+    console.log(err);
+    return next(new ErrorHandler(err.message, 400));
+  }
 };
 
 export const resetUserPassword = async (req, res, next) => {
