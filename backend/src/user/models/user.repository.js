@@ -36,5 +36,10 @@ export const deleteUserRepo = async (_id) => {
 };
 
 export const updateUserRoleAndProfileRepo = async (_id, data) => {
-  // Write your code here for updating the roles of other users by admin
+  return await UserModel.findByIdAndUpdate(_id, data, {
+    new: true, // return updated document
+    runValidators: true, // enforce schema rules
+  });
 };
+
+// Write your code here for updating the roles of other users by admin

@@ -197,5 +197,14 @@ export const deleteUser = async (req, res, next) => {
 };
 
 export const updateUserProfileAndRole = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updatedUser = await updateUserRoleAndProfileRepo(id, req.body);
+    if (!updatedUser) return res.status(400).send("update failed");
+    return res.status(200).send("Updated successfully");
+  } catch (err) {
+    console.log(err);
+    return next(new ErrorHandler(400, err));
+  }
   // Write your code here for updating the roles of other users by admin
 };
