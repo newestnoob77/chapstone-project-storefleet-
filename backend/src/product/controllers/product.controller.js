@@ -30,6 +30,45 @@ export const addNewProduct = async (req, res, next) => {
 };
 
 export const getAllProducts = async (req, res, next) => {
+  try{
+const {name,category,minPrice,maxPrice,inStock,page=1,limit=10,sort="createdAt",sortOrder="desc"}=req.query
+let filter={}
+  if (name) {
+    filter.name = { $regex: name, $options: "i" }; // case-insensitive search
+  }
+
+  if (category) {
+    filter.category = category;
+  }
+
+  if (minPrice || maxPrice) {
+    filter.price = {};
+    if (minPrice) filter.price.$gte = Number(minPrice);
+    if (maxPrice) filter.price.$lte = Number(maxPrice);
+  }
+
+  if (inStock !== undefined) {
+    filter.stock = { $gt: 0 }; // only products with stock > 0
+  }
+  const skip =(page-1)*limit
+  const products = await getAllProductsRepo(filter,skip,limit,sort,sortOrder)
+  if(!products)return res.status(400).send("Products not found")
+  const total = await getTotalCountsOfProduct(filter)
+  const result={
+    products,
+    pagination:{
+         total,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(total / limit),
+    }
+  }
+  return res.status(200).send(result)
+  }
+  catch(err){
+    console.log(err)
+    return next(new ErrorHandler(400,"Couldnt fetch all products"))
+  }
   // Implement the functionality for search, filter and pagination this function.
 };
 
