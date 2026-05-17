@@ -5,6 +5,7 @@ import { ErrorHandler } from "../../../utils/errorHandler.js";
 import {
   addNewProductRepo,
   deleProductRepo,
+  deleteReviewRepo,
   findProductRepo,
   getAllProductsRepo,
   getProductDetailsRepo,
@@ -167,40 +168,20 @@ export const getAllReviewsOfAProduct = async (req, res, next) => {
 
 export const deleteReview = async (req, res, next) => {
   // Insert the essential code into this controller wherever necessary to resolve issues related to removing reviews and updating product ratings.
-  try {
-    const { productId, reviewId } = req.query;
-    if (!productId || !reviewId) {
-      return next(
-        new ErrorHandler(
-          400,
-          "pls provide productId and reviewId as query params"
-        )
-      );
+  try{
+const {productId,reviewId}=req.params;
+const updatedProduct = await deleteReviewRepo(productId,reviewId);
+  if (!updatedProduct) {
+      return res.status(404).send("Product or review not found" );
     }
-    const product = await findProductRepo(productId);
-    if (!product) {
-      return next(new ErrorHandler(400, "Product not found!"));
-    }
-    const reviews = product.reviews;
-
-    const isReviewExistIndex = reviews.findIndex((rev) => {
-      return rev._id.toString() === reviewId.toString();
+    return res.status(200).json({
+      message: "Review deleted successfully",
+      rating:updateProduct.rating,
+      reviews: updatedProduct.reviews,
     });
-    if (isReviewExistIndex < 0) {
-      return next(new ErrorHandler(400, "review doesn't exist"));
-    }
-
-    const reviewToBeDeleted = reviews[isReviewExistIndex];
-    reviews.splice(isReviewExistIndex, 1);
-
-    await product.save({ validateBeforeSave: false });
-    res.status(200).json({
-      success: true,
-      msg: "review deleted successfully",
-      deletedReview: reviewToBeDeleted,
-      product,
-    });
-  } catch (error) {
-    return next(new ErrorHandler(500, error));
+  }
+  catch(err){
+    console.log(err)
+    return next( new ErrorHandler("deletion failed"))
   }
 };

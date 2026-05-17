@@ -31,3 +31,17 @@ export const getTotalCountsOfProduct = async (filter) => {
 export const findProductRepo = async (productId) => {
   return await ProductModel.findById(productId);
 };
+export const deleteReviewRepo=async(productId,reviewId)=>{
+  const product = await ProductModel.findByIdAndUpdate(productId,{$pull:{reviews:{_id:reviewId}}},
+    {new:true}
+  )
+  if(!product) return null
+  if(product.reviews.length>0){
+    const avgRating  = product.reviews.reduce((acc,review)=>acc+review.rating,0)/product.reviews.length;
+    product.rating=avgRating;
+  }else{
+    product.rating=0;
+  }
+  await product.save();
+  return product;
+}
