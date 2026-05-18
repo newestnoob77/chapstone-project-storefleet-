@@ -22,7 +22,10 @@ export const createNewUser = async (req, res, next) => {
   try {
     const exsistingUser = await UserModel.findOne({ email: req.body.email });
     if (exsistingUser)
-      return res.status(400).send("User already exists use different email");
+      return res.status(400).json({
+    "success":false,
+    "error":"email already registered"
+    });
     const newUser = await createNewUserRepo(req.body);
     await sendToken(newUser, res, 200);
     // Implement sendWelcomeEmail function to send welcome message
